@@ -1,9 +1,12 @@
 #if defined(ESP8266)
+#include <ESP8266mDNS.h>
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <FS.h>
 #elif defined(ESP32)
+#include <BluetoothSerial.h>
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <AsyncTCP.h>
 #include <SPIFFS.h>
 #endif
@@ -12,9 +15,12 @@
 
 AsyncWebServer server(80);
 
+// const char *ssid = "Wave_Avilatek";
+// const char *password = "WFKHWGQF9vwG";
+
 const char *ssid = "Sanchez Fuentes";
 const char *password = "09305573";
-const char *hostname = "ESP_SanUSB";
+const char *hostname = "lesanpi";
 
 void log(String text, String name)
 {
@@ -22,6 +28,12 @@ void log(String text, String name)
   Serial.print(name);
   Serial.print("] ");
   Serial.println(text);
+}
+
+void startMDNS()
+{
+  MDNS.addService("http", "tcp", 80);
+  log("MDNS Iniciado en http://" + String(hostname) + ".local", "MDNS");
 }
 
 void startWifi()
@@ -43,16 +55,6 @@ void startWifi()
 
 void startServer()
 {
-}
-
-void setup()
-{
-  pinMode(LED_BUILTIN, OUTPUT);
-  Serial.begin(115200);
-  SPIFFS.begin();
-  /// Start wifi
-  startWifi();
-
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             {
     log("GET index", "Server.get()");
@@ -70,7 +72,21 @@ void setup()
 
   server.begin();
   log("Server started", "Setup");
-  // put your setup code here, to run once:
+}
+
+void setup()
+{
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(115200);
+  SPIFFS.begin();
+  /// Start wifi
+  startWifi();
+  /// Begin MDNS Hostname
+  MDNS.begin(hostname);
+  /// Start server
+  startServer();
+  /// Start MDNS
+  startMDNS();
 }
 
 void loop()
